@@ -9,7 +9,7 @@ public class Student : Entity
     public string LastName { get; set; } = string.Empty;
     public string UniversityIndex { get; set; } = string.Empty;
     public int YearOfStudy { get; set; }
-    
+
     public Address Address { get; set; } = null!;
 
     public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();

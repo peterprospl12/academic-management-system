@@ -4,6 +4,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AMS.Domain", "AMS.Domain\AM
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AMS.Infrastructure", "AMS.Infrastructure\AMS.Infrastructure.csproj", "{C6B5BCFC-9215-4B0A-8ED3-597229545D40}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AMS.Application", "AMS.Application\AMS.Application.csproj", "{FDDEAE54-AE2C-4E74-91E2-C514CD3CB9F2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AMS.ConsoleUI", "AMS.ConsoleUI\AMS.ConsoleUI.csproj", "{4F84CFD5-0189-4083-8BE5-491A34C7B45E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{C6B5BCFC-9215-4B0A-8ED3-597229545D40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6B5BCFC-9215-4B0A-8ED3-597229545D40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6B5BCFC-9215-4B0A-8ED3-597229545D40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDDEAE54-AE2C-4E74-91E2-C514CD3CB9F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDDEAE54-AE2C-4E74-91E2-C514CD3CB9F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDDEAE54-AE2C-4E74-91E2-C514CD3CB9F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDDEAE54-AE2C-4E74-91E2-C514CD3CB9F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F84CFD5-0189-4083-8BE5-491A34C7B45E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F84CFD5-0189-4083-8BE5-491A34C7B45E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F84CFD5-0189-4083-8BE5-491A34C7B45E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F84CFD5-0189-4083-8BE5-491A34C7B45E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
