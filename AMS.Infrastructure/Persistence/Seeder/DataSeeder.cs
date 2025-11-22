@@ -1,163 +1,245 @@
 ﻿using AMS.Application.Common.Interfaces;
-using AMS.Domain.Entities;
+using AMS.Application.DTOs;
+using AMS.Application.Interfaces;
 using AMS.Domain.Enums;
-using AMS.Domain.ValueObjects;
 using Bogus;
 using Microsoft.EntityFrameworkCore;
 
 namespace AMS.Infrastructure.Persistence.Seeder;
 
-public class DataSeeder(IApplicationDbContext context)
+public class DataSeeder(
+    IApplicationDbContext context,
+    IDepartmentService departmentService,
+    IProfessorService professorService,
+    IStudentService studentService,
+    IMasterStudentService masterStudentService,
+    ICourseService courseService,
+    IEnrollmentService enrollmentService)
 {
-    private const int StudentCount = 50;
-    private const int MasterStudentCount = 10;
     private const int ProfessorCount = 5;
-    private const int CourseCount = 10;
+    private const int StudentCount = 20;
+    private const int MasterStudentCount = 5;
+    private const int CourseCount = 8;
 
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
-        if (await context.Students.AnyAsync(cancellationToken)) return;
-
-
-        var studentCounter = new SequenceCounter { Prefix = "S", CurrentValue = 1000 };
-        var professorCounter = new SequenceCounter { Prefix = "P", CurrentValue = 100 };
-
-        await context.SequenceCounters.AddRangeAsync(new[] { studentCounter, professorCounter }, cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
-
-        var faker = new Faker("pl");
-
-        var departments = new List<Department>
+        if (await context.Students.AnyAsync(cancellationToken))
         {
-            new() { Name = "Wydział Informatyki i Zarządzania" },
-            new() { Name = "Wydział Elektroniki" },
-            new() { Name = "Wydział Matematyki" }
-        };
-        await context.Departments.AddRangeAsync(departments, cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
-
-        var professors = new List<Professor>();
-        var offices = new List<Office>();
-
-        var professorFaker = new Faker<Professor>("pl")
-            .RuleFor(p => p.FirstName, f => f.Name.FirstName())
-            .RuleFor(p => p.LastName, f => f.Name.LastName())
-            .RuleFor(p => p.AcademicTitle, f => f.PickRandom<AcademicTitle>())
-            .RuleFor(p => p.UniversityIndex, (_, _) =>
-            {
-                professorCounter.CurrentValue++;
-                return $"{professorCounter.Prefix}{professorCounter.CurrentValue}";
-            })
-            .RuleFor(p => p.Address, f => new Address(
-                f.Address.StreetName() + " " + f.Address.BuildingNumber(),
-                f.Address.City(),
-                f.Address.ZipCode()
-            ));
-
-        var officeFaker = new Faker<Office>("pl")
-            .RuleFor(o => o.Building, f => "Budynek " + f.PickRandom("A", "B", "C", "D"))
-            .RuleFor(o => o.RoomNumber, f => f.Random.Number(100, 400).ToString());
-
-        for (var i = 0; i < ProfessorCount; i++)
-        {
-            var professor = professorFaker.Generate();
-            var office = officeFaker.Generate();
-
-            office.Professor = professor;
-
-            professors.Add(professor);
-            offices.Add(office);
+            Console.WriteLine("Database is already seeded. Skipping");
+            return;
         }
 
-        await context.Professors.AddRangeAsync(professors, cancellationToken);
-        await context.Offices.AddRangeAsync(offices, cancellationToken);
+        Console.WriteLine("Seeding data has been started");
 
-        var courseFaker = new Faker<Course>("pl")
-            .RuleFor(c => c.Name, f => f.Company.CatchPhrase())
-            .RuleFor(c => c.CourseCode, f => f.Random.Replace("###-???"))
-            .RuleFor(c => c.Ects, f => f.Random.Int(2, 8));
+        await SeedDepartmentsAsync(cancellationToken);
 
-        var courses = courseFaker.Generate(CourseCount);
-        await context.Courses.AddRangeAsync(courses, cancellationToken);
+        var professorIds = await SeedProfessorsAsync(cancellationToken);
 
-        await context.SaveChangesAsync(cancellationToken);
+        var courseIds = await SeedCoursesAsync(cancellationToken);
 
-        var random = new Random();
-        foreach (var course in courses)
+        var studentIds = await SeedStudentsAsync(cancellationToken);
+
+        var masterIds = await SeedMasterStudentsAsync(professorIds, cancellationToken);
+
+        var allStudentIds = studentIds.Concat(masterIds).ToList();
+        await SeedEnrollmentsAsync(allStudentIds, courseIds, cancellationToken);
+
+        Console.WriteLine("\n\n--- Seeding finished ---");
+    }
+
+    private async Task SeedDepartmentsAsync(CancellationToken ct)
+    {
+        Console.WriteLine("Seeding departments...");
+        var departments = new[]
+            { "Wydział Informatyki", "Wydział Matematyki", "Wydział Fizyki", "Wydział Zarządzania" };
+
+        foreach (var name in departments)
+            await departmentService.CreateDepartmentAsync(new CreateDepartmentDto(name), ct);
+    }
+
+    private async Task<List<Guid>> SeedProfessorsAsync(CancellationToken ct)
+    {
+        Console.Write("Seeding Professors: ");
+        var createdIds = new List<Guid>();
+
+        var faker = new Faker<CreateProfessorDto>("pl")
+            .CustomInstantiator(f => new CreateProfessorDto(
+                f.Name.FirstName(),
+                f.Name.LastName(),
+                f.Address.StreetName() + " " + f.Address.BuildingNumber(),
+                f.Address.City(),
+                f.Address.ZipCode(),
+                f.PickRandom<AcademicTitle>()
+            ));
+
+        var dtos = faker.Generate(ProfessorCount);
+
+        foreach (var dto in dtos)
         {
+            var result = await professorService.CreateProfessorAsync(dto, ct);
+            if (result.IsSuccess)
+            {
+                createdIds.Add(result.Value);
+                Console.Write("P");
+            }
+        }
+
+        Console.WriteLine();
+        return createdIds;
+    }
+
+    private async Task<List<Guid>> SeedCoursesAsync(CancellationToken ct)
+    {
+        var departmentIds = await context.Departments
+            .Select(d => d.Id)
+            .ToListAsync(ct);
+
+        if (departmentIds.Count == 0)
+        {
+            Console.WriteLine("\n[ERROR] No departments in database! Cannot create courses.");
+            return [];
+        }
+
+        var professorIds = await context.Professors.Select(p => p.Id).ToListAsync(ct);
+
+        if (professorIds.Count == 0) Console.WriteLine("\n[ERROR] No professors in database! Cannot create courses.");
+
+        Console.Write("Seeding courses: ");
+        var createdIds = new List<Guid>();
+
+        var faker = new Faker<CreateCourseDto>("pl")
+            .CustomInstantiator(f => new CreateCourseDto(
+                f.Company.CatchPhrase(),
+                f.Random.Replace("???-###"),
+                f.Random.Int(2, 8),
+                f.PickRandom(departmentIds),
+                f.PickRandom(professorIds)
+            ));
+
+        var dtos = faker.Generate(CourseCount);
+
+        foreach (var dto in dtos)
+        {
+            var result = await courseService.CreateCourseAsync(dto, ct);
+            if (result.IsSuccess)
+            {
+                createdIds.Add(result.Value);
+                Console.Write("C");
+            }
+        }
+
+        Console.WriteLine();
+
+        Console.Write("Seeding Prerequisites: ");
+        var random = new Random();
+        foreach (var courseId in createdIds)
             if (random.NextDouble() > 0.7)
             {
-                var potentialPrerequisite = courses[random.Next(courses.Count)];
-                if (potentialPrerequisite.Id != course.Id)
+                var prereqId = createdIds[random.Next(createdIds.Count)];
+                if (prereqId != courseId)
                 {
-                    course.Prerequisites.Add(potentialPrerequisite);
+                    await courseService.AddPrerequisiteAsync(courseId, prereqId, ct);
+                    Console.Write("*");
+                }
+            }
+
+        Console.WriteLine();
+        return createdIds;
+    }
+
+    private async Task<List<Guid>> SeedStudentsAsync(CancellationToken ct)
+    {
+        Console.Write("Seeding students: ");
+        var createdIds = new List<Guid>();
+
+        var faker = new Faker<CreateStudentDto>("pl")
+            .CustomInstantiator(f => new CreateStudentDto(
+                f.Name.FirstName(),
+                f.Name.LastName(),
+                f.Address.StreetName() + " " + f.Address.BuildingNumber(),
+                f.Address.City(),
+                f.Address.ZipCode(),
+                f.Random.Int(1, 3)
+            ));
+
+        var dtos = faker.Generate(StudentCount);
+
+        foreach (var dto in dtos)
+        {
+            var result = await studentService.CreateStudentAsync(dto, ct);
+            if (result.IsSuccess)
+            {
+                createdIds.Add(result.Value);
+                Console.Write("S");
+            }
+        }
+
+        Console.WriteLine();
+        return createdIds;
+    }
+
+    private async Task<List<Guid>> SeedMasterStudentsAsync(List<Guid> professorIds, CancellationToken ct)
+    {
+        Console.Write("Seeding Master Students: ");
+        var createdIds = new List<Guid>();
+
+        var faker = new Faker<CreateMasterStudentDto>("pl")
+            .CustomInstantiator(f => new CreateMasterStudentDto(
+                f.Name.FirstName(),
+                f.Name.LastName(),
+                f.Random.Int(4, 5),
+                f.Address.StreetName(),
+                f.Address.City(),
+                f.Address.ZipCode(),
+                f.Lorem.Sentence(4),
+                f.PickRandom(professorIds)
+            ));
+
+        var dtos = faker.Generate(MasterStudentCount);
+
+        foreach (var dto in dtos)
+        {
+            var result = await masterStudentService.CreateMasterStudentAsync(dto, ct);
+            if (result.IsSuccess)
+            {
+                createdIds.Add(result.Value);
+                Console.Write("M");
+            }
+        }
+
+        Console.WriteLine();
+        return createdIds;
+    }
+
+    private async Task SeedEnrollmentsAsync(List<Guid> studentIds, List<Guid> courseIds, CancellationToken ct)
+    {
+        Console.Write("Seeding Enrollments: ");
+        var random = new Random();
+
+        foreach (var studentId in studentIds)
+        {
+            var coursesToEnroll = courseIds.OrderBy(x => random.Next()).Take(random.Next(2, 5)).ToList();
+
+            foreach (var courseId in coursesToEnroll)
+            {
+                var enrollDto = new EnrollStudentDto(studentId, courseId, "2025/Lato");
+                var enrollResult = await enrollmentService.EnrollStudentAsync(enrollDto, ct);
+
+                if (enrollResult.IsSuccess)
+                {
+                    Console.Write(".");
+                    if (random.NextDouble() > 0.2)
+                    {
+                        var grades = new[] { 2.0, 3.0, 3.5, 4.0, 4.5, 5.0 };
+                        var grade = grades[random.Next(grades.Length)];
+
+                        await enrollmentService.GradeStudentAsync(
+                            new UpdateGradeDto(enrollResult.Value, grade), ct);
+                    }
                 }
             }
         }
 
-        var studentFaker = new Faker<Student>("pl")
-            .RuleFor(s => s.FirstName, f => f.Name.FirstName())
-            .RuleFor(s => s.LastName, f => f.Name.LastName())
-            .RuleFor(s => s.YearOfStudy, f => f.Random.Int(1, 3))
-            .RuleFor(s => s.UniversityIndex, (_, _) =>
-            {
-                studentCounter.CurrentValue++;
-                return $"{studentCounter.Prefix}{studentCounter.CurrentValue}";
-            })
-            .RuleFor(s => s.Address, f => new Address(
-                f.Address.StreetName(),
-                f.Address.City(),
-                f.Address.ZipCode()
-            ));
-
-        var students = studentFaker.Generate(StudentCount);
-
-        var masterStudentFaker = new Faker<MasterStudent>("pl")
-            .RuleFor(s => s.FirstName, f => f.Name.FirstName())
-            .RuleFor(s => s.LastName, f => f.Name.LastName())
-            .RuleFor(s => s.YearOfStudy, f => f.Random.Int(4, 5))
-            .RuleFor(s => s.UniversityIndex, (_, _) =>
-            {
-                studentCounter.CurrentValue++;
-                return $"{studentCounter.Prefix}{studentCounter.CurrentValue}";
-            })
-            .RuleFor(s => s.Address, f => new Address(f.Address.StreetName(), f.Address.City(), f.Address.ZipCode()))
-            .RuleFor(m => m.ThesisTopic, f => f.Lorem.Sentence(5))
-            .RuleFor(m => m.Promoter, f => f.PickRandom(professors));
-
-        var masterStudents = masterStudentFaker.Generate(MasterStudentCount);
-
-        var allStudents = new List<Student>();
-        allStudents.AddRange(students);
-        allStudents.AddRange(masterStudents);
-
-        await context.Students.AddRangeAsync(allStudents, cancellationToken);
-
-        var enrollments = new List<Enrollment>();
-        foreach (var student in allStudents)
-        {
-            var coursesToEnroll = faker.PickRandom(courses, faker.Random.Int(3, 5)).ToList();
-
-            foreach (var course in coursesToEnroll)
-            {
-                enrollments.Add(new Enrollment
-                {
-                    Student = student,
-                    Course = course,
-                    Semester = "2025/Summer",
-                    Grade = random.NextDouble() > 0.2 ? GetRandomGrade(random) : null
-                });
-            }
-        }
-
-        await context.Enrollments.AddRangeAsync(enrollments, cancellationToken);
-
-        await context.SaveChangesAsync(cancellationToken);
-    }
-
-    private static double GetRandomGrade(Random random)
-    {
-        var grades = new[] { 2.0, 3.0, 3.5, 4.0, 4.5, 5.0 };
-        return grades[random.Next(grades.Length)];
+        Console.WriteLine();
     }
 }

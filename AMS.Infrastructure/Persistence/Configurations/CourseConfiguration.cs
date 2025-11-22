@@ -14,30 +14,30 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
 
         builder.Property(c => c.Ects).HasPrecision(4, 1).IsRequired();
 
-        builder.HasMany(c => c.Prerequisites)       // Kurs ma wymagania
-            .WithMany(c => c.IsPrerequisiteFor)     // Kurs jest wymaganiem dla innych
-            .UsingEntity<Dictionary<string, object>>(
-                "CoursePrerequisites", // Nazwa tabeli w SQL
+        builder.HasOne(c => c.Department)
+            .WithMany()
+            .HasForeignKey(c => c.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-                // Konfiguracja "Prawej" strony (Target - czyli Prerequisite)
+        builder.HasOne(c => c.Lecturer)
+            .WithMany()
+            .HasForeignKey(c => c.LecturerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(c => c.Prerequisites)
+            .WithMany(c => c.IsPrerequisiteFor)
+            .UsingEntity<Dictionary<string, object>>(
+                "CoursePrerequisites",
                 right => right.HasOne<Course>()
                     .WithMany()
                     .HasForeignKey("PrerequisiteId")
-                    .OnDelete(DeleteBehavior.Restrict), // Ważne: Usunięcie prerekwizytu nie powinno kaskadowo usuwać kursu głównego!
-
-                // Konfiguracja "Lewej" strony (Source - czyli Course)
+                    .OnDelete(DeleteBehavior
+                        .Restrict),
                 left => left.HasOne<Course>()
                     .WithMany()
                     .HasForeignKey("CourseId")
-                    .OnDelete(DeleteBehavior.Cascade), // Usunięcie kursu usuwa wpisy w tabeli łączącej
-
-                // Konfiguracja samej tabeli łączącej (opcjonalne klucze)
-                join =>
-                {
-                    join.ToTable("CoursePrerequisites");
-                    // Opcjonalnie: klucz główny złożony (zazwyczaj EF robi to sam, ale można wymusić)
-                    // join.HasKey("CourseId", "PrerequisiteId");
-                }
+                    .OnDelete(DeleteBehavior.Cascade),
+                join => { join.ToTable("CoursePrerequisites"); }
             );
     }
 }
