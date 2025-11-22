@@ -38,8 +38,8 @@ public class SequenceService(IApplicationDbContext context) : ISequenceService
     {
         var sequences = await context.SequenceCounters
             .AsNoTracking()
-            .Select(s => new SequenceDto(s.Prefix, s.CurrentValue))
             .OrderBy(s => s.Prefix)
+            .Select(s => new SequenceDto(s.Prefix, s.CurrentValue))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 

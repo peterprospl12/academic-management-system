@@ -14,7 +14,8 @@ public class DataSeeder(
     IStudentService studentService,
     IMasterStudentService masterStudentService,
     ICourseService courseService,
-    IEnrollmentService enrollmentService)
+    IEnrollmentService enrollmentService,
+    IOfficeService officeService)
 {
     private const int ProfessorCount = 5;
     private const int StudentCount = 20;
@@ -33,7 +34,11 @@ public class DataSeeder(
 
         await SeedDepartmentsAsync(cancellationToken);
 
+        var officeIds = await SeedOfficesAsync(cancellationToken);
+
         var professorIds = await SeedProfessorsAsync(cancellationToken);
+
+        await AssignOfficesToProfessorsAsync(officeIds, professorIds, cancellationToken);
 
         var courseIds = await SeedCoursesAsync(cancellationToken);
 
@@ -55,6 +60,52 @@ public class DataSeeder(
 
         foreach (var name in departments)
             await departmentService.CreateDepartmentAsync(new CreateDepartmentDto(name), ct);
+    }
+
+    private async Task<List<Guid>> SeedOfficesAsync(CancellationToken ct)
+    {
+        Console.Write("Seeding offices: ");
+        var createdIds = new List<Guid>();
+        var faker = new Faker<CreateOfficeDto>("pl")
+            .CustomInstantiator(f => new CreateOfficeDto(
+                "Budynek " + f.PickRandom("A", "B", "C", "D"),
+                f.Random.Number(100, 499).ToString()
+            ));
+
+        var dtos = faker.Generate(ProfessorCount + 2);
+
+        foreach (var dto in dtos)
+        {
+            var result = await officeService.CreateOfficeAsync(dto, ct);
+            if (result.IsSuccess)
+            {
+                createdIds.Add(result.Value);
+                Console.Write("O");
+            }
+        }
+
+        Console.WriteLine();
+        return createdIds;
+    }
+
+    private async Task AssignOfficesToProfessorsAsync(List<Guid> officeIds, List<Guid> professorIds,
+        CancellationToken ct)
+    {
+        Console.Write("Przypisywanie biur: ");
+        var availableOffices = officeIds.OrderBy(x => Guid.NewGuid()).ToList();
+
+        for (var i = 0; i < professorIds.Count; i++)
+        {
+            if (i >= availableOffices.Count) break;
+
+            var profId = professorIds[i];
+            var officeId = availableOffices[i];
+
+            await officeService.AssignProfessorToOfficeAsync(officeId, profId, ct);
+            Console.Write(".");
+        }
+
+        Console.WriteLine();
     }
 
     private async Task<List<Guid>> SeedProfessorsAsync(CancellationToken ct)

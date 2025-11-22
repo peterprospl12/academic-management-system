@@ -42,13 +42,23 @@ public class ReportsService(IApplicationDbContext context) : IReportsService
         var report = await context.Courses
             .AsNoTracking()
             .Where(c => c.DepartmentId == departmentId)
-            .Select(c => new CourseGpaDto(
+            .Select(c => new
+            {
                 c.Name,
                 c.CourseCode,
-                c.Enrollments.Where(e => e.Grade.HasValue).Average(e => e.Grade!.Value),
-                c.Enrollments.Count(e => e.Grade.HasValue)
+                AverageGrade = c.Enrollments
+                    .Where(e => e.Grade.HasValue)
+                    .Average(e => e.Grade) ?? 0.0,
+
+                GradedCount = c.Enrollments.Count(e => e.Grade.HasValue)
+            })
+            .OrderByDescending(x => x.AverageGrade)
+            .Select(x => new CourseGpaDto(
+                x.Name,
+                x.CourseCode,
+                x.AverageGrade,
+                x.GradedCount
             ))
-            .OrderByDescending(c => c.AverageGrade)
             .ToListAsync(ct)
             .ConfigureAwait(false);
 

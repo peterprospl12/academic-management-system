@@ -65,8 +65,8 @@ public class DepartmentService(IApplicationDbContext context) : IDepartmentServi
     {
         var departments = await context.Departments
             .AsNoTracking()
-            .Select(d => new DepartmentDto(d.Id, d.Name))
             .OrderBy(d => d.Name)
+            .Select(d => new DepartmentDto(d.Id, d.Name))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 

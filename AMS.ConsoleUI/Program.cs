@@ -25,6 +25,7 @@ builder.Services.AddScoped<IProfessorService, ProfessorService>();
 builder.Services.AddScoped<ISequenceService, SequenceService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IReportsService, ReportsService>();
+builder.Services.AddScoped<IOfficeService, OfficeService>();
 
 builder.Services.AddScoped<DataSeeder>();
 
