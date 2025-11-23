@@ -1,4 +1,7 @@
-﻿using AMS.ConsoleUI.Views.Offices;
+﻿using AMS.ConsoleUI.Views.Courses;
+using AMS.ConsoleUI.Views.Departments;
+using AMS.ConsoleUI.Views.Enrollments;
+using AMS.ConsoleUI.Views.Offices;
 using AMS.ConsoleUI.Views.Professors;
 using AMS.ConsoleUI.Views.Reports;
 using AMS.ConsoleUI.Views.Students;
@@ -23,11 +26,14 @@ public class MainView : Window
         {
             { 0, () => new StudentListView(_serviceProvider) },
             { 1, () => new MasterStudentListView(_serviceProvider) },
-            { 2, () => new ProfessorListView(_serviceProvider) },
-            { 3, () => new OfficeListView(_serviceProvider) },
-            { 4, () => new SequenceListView(_serviceProvider) },
-            { 5, () => new ReportsView(_serviceProvider) },
-            { 6, () => new DataGeneratorView(_serviceProvider) }
+            { 2, () => new CourseListView(_serviceProvider) },
+            { 3, () => new DepartmentListView(_serviceProvider) },
+            { 4, () => new StudentSelectionForEnrollmentView(_serviceProvider) },
+            { 5, () => new ProfessorListView(_serviceProvider) },
+            { 6, () => new OfficeListView(_serviceProvider) },
+            { 7, () => new SequenceListView(_serviceProvider) },
+            { 8, () => new ReportsView(_serviceProvider) },
+            { 9, () => new DataGeneratorView(_serviceProvider) }
         };
 
         var menuFrame = new FrameView("Menu")
@@ -39,6 +45,9 @@ public class MainView : Window
         {
             "Students",
             "Master Students",
+            "Courses",
+            "Departments",
+            "Enrollments",
             "Professors",
             "Offices",
             "Sequence Counters",
@@ -64,7 +73,7 @@ public class MainView : Window
 
     private void Navigate(int index)
     {
-        if (index == 7)
+        if (index == 10)
         {
             Terminal.Gui.Application.RequestStop();
             return;

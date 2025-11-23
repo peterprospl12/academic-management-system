@@ -40,7 +40,7 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ApplicationDbContext>();
         await context.Database.MigrateAsync();
 
-        var seeder = services.GetRequiredService<DataSeeder>();
+        var seeder = services.GetRequiredService<IDataSeederService>();
         await seeder.SeedAsync(CancellationToken.None);
     }
     catch (Exception ex)

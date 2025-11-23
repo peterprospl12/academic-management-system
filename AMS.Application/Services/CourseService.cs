@@ -169,7 +169,7 @@ public sealed class CourseService(IApplicationDbContext context) : ICourseServic
         return Result.Success();
     }
 
-    private string GetProfessorFullName(Professor professor)
+    private static string GetProfessorFullName(Professor professor)
     {
         return $"{professor.AcademicTitle.ToString()} {professor.FirstName} {professor.LastName}";
     }

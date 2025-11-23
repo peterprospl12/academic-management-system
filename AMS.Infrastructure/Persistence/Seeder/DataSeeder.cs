@@ -20,7 +20,7 @@ public class DataSeeder(
 {
     private const int DefaultProfessorCount = 5;
     private const int DefaultStudentCount = 20;
-    private const int DefaultCourseCount = 8;
+    private const int DefaultCourseCount = 10;
 
     public async Task SeedAsync(CancellationToken cancellationToken)
     {
@@ -192,6 +192,26 @@ public class DataSeeder(
             if (result.IsSuccess) createdIds.Add(result.Value);
         }
 
+        var random = new Random();
+
+        for (var i = 1; i < createdIds.Count; i++)
+        {
+            var currentCourseId = createdIds[i];
+
+            for (var j = 0; j < 3; j++)
+                if (random.NextDouble() > 0.3)
+                {
+                    var previousCourseIndex = random.Next(0, i);
+                    var prereqId = createdIds[previousCourseIndex];
+
+                    var result = await courseService.AddPrerequisiteAsync(currentCourseId, prereqId, ct);
+
+                    if (result.IsSuccess)
+                        Console.Write("*");
+                }
+        }
+
+        Console.WriteLine();
         return createdIds;
     }
 
