@@ -14,7 +14,6 @@ public class StudentListView : BaseEntityListView<StudentDto, IStudentService>
 
     protected override string EntityName => "Student";
 
-    // Tu podpinamy nasz widok tworzenia!
     protected override View CreateAddView(Action onSuccessfullyAdded)
     {
         return new CreateStudentView(ServiceProvider, onSuccessfullyAdded);

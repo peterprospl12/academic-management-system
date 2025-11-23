@@ -15,5 +15,5 @@ public record OfficeDto(
     Guid Id,
     string Building,
     string RoomNumber,
-    string OccupantName
+    Guid? OccupantId
 );

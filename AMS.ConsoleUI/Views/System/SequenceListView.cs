@@ -8,10 +8,12 @@ namespace AMS.ConsoleUI.Views.System;
 
 public class SequenceListView(IServiceProvider sp) : BaseEntityListView<SequenceDto, ISequenceService>(sp)
 {
-    protected override bool AllowCreate => false;
-    protected override bool AllowDelete => false;
+    protected override string EntityName => "Sequence Counter";
 
-    protected override string EntityName => "Sequence";
+    protected override View CreateAddView(Action onSuccessfullyAdded)
+    {
+        return new CreateSequenceView(ServiceProvider, onSuccessfullyAdded);
+    }
 
     protected override Result<List<SequenceDto>> GetAllEntities(CancellationToken token)
     {
@@ -19,24 +21,20 @@ public class SequenceListView(IServiceProvider sp) : BaseEntityListView<Sequence
             s.GetAllSequencesAsync(token).GetAwaiter().GetResult());
     }
 
-    protected override string FormatEntity(SequenceDto s)
-    {
-        return $"Prefix: '{s.Prefix}' | Next Value: {s.InitialValue}";
-    }
-
-
-    protected override View CreateAddView(Action onSuccessfullyAdded)
-    {
-        return null!;
-    }
-
     protected override Result DeleteEntity(SequenceDto entity, CancellationToken token)
     {
-        return Result.Failure("Operation not supported");
+        return ExecuteServiceFunc<ISequenceService, Result>(s =>
+            s.DeleteSequenceAsync(entity.Prefix, token).GetAwaiter().GetResult());
     }
 
-    protected override string GetDeleteConfirmationMessage(SequenceDto entity)
+    protected override string FormatEntity(SequenceDto s)
     {
-        return string.Empty;
+        return $"Prefix: '{s.Prefix}' | Current Value: {s.InitialValue}";
+    }
+
+    protected override string GetDeleteConfirmationMessage(SequenceDto s)
+    {
+        return $"Are you sure you want to delete sequence with Prefix '{s.Prefix}'?\n" +
+               "Generating numbers for this prefix will no longer be possible.";
     }
 }

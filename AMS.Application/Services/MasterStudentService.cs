@@ -68,6 +68,35 @@ public class MasterStudentService(IApplicationDbContext context) : IMasterStuden
         }
     }
 
+    public async Task<Result<List<MasterStudentDto>>> GetAllMasterStudentsAsync(CancellationToken cancellationToken)
+    {
+        var students = await context.MasterStudents
+            .AsNoTracking()
+            .Select(s => new MasterStudentDto(
+                s.Id,
+                s.FirstName,
+                s.LastName,
+                s.UniversityIndex,
+                s.ThesisTopic,
+                s.Promoter != null
+                    ? new ProfessorDto(
+                        s.Promoter.Id,
+                        s.Promoter.FirstName,
+                        s.Promoter.LastName,
+                        s.Promoter.AcademicTitle,
+                        s.Promoter.UniversityIndex,
+                        s.Promoter.Address.Street,
+                        s.Promoter.Address.City,
+                        s.Promoter.Office!.RoomNumber ?? "None"
+                    )
+                    : null
+            ))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return Result<List<MasterStudentDto>>.Success(students);
+    }
+
     public async Task<Result<MasterStudentDto>> GetMasterStudentByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var student = await context.MasterStudents
@@ -84,8 +113,18 @@ public class MasterStudentService(IApplicationDbContext context) : IMasterStuden
             student.LastName,
             student.UniversityIndex,
             student.ThesisTopic,
-            student.Promoter != null ? $"{student.Promoter.FirstName} {student.Promoter.LastName}" : "Brak"
-        );
+            student.Promoter != null
+                ? new ProfessorDto(
+                    student.Promoter.Id,
+                    student.Promoter.FirstName,
+                    student.Promoter.LastName,
+                    student.Promoter.AcademicTitle,
+                    student.Promoter.UniversityIndex,
+                    student.Promoter.Address.Street,
+                    student.Promoter.Address.City,
+                    student.Promoter.Office!.RoomNumber ?? "None"
+                )
+                : null);
 
         return Result<MasterStudentDto>.Success(dto);
     }

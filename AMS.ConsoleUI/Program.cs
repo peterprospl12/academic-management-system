@@ -27,7 +27,7 @@ builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IReportsService, ReportsService>();
 builder.Services.AddScoped<IOfficeService, OfficeService>();
 
-builder.Services.AddScoped<DataSeeder>();
+builder.Services.AddScoped<IDataSeederService, DataSeeder>();
 
 
 var app = builder.Build();

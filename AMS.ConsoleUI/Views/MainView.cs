@@ -1,5 +1,4 @@
-﻿// File: AMS.ConsoleUI/Views/MainView.cs
-
+﻿using AMS.ConsoleUI.Views.Offices;
 using AMS.ConsoleUI.Views.Professors;
 using AMS.ConsoleUI.Views.Reports;
 using AMS.ConsoleUI.Views.Students;
@@ -23,9 +22,12 @@ public class MainView : Window
         _navigationMap = new Dictionary<int, Func<View>>
         {
             { 0, () => new StudentListView(_serviceProvider) },
-            { 1, () => new ProfessorListView(_serviceProvider) },
-            { 2, () => new SequenceListView(_serviceProvider) },
-            { 3, () => new ReportsView(_serviceProvider) }
+            { 1, () => new MasterStudentListView(_serviceProvider) },
+            { 2, () => new ProfessorListView(_serviceProvider) },
+            { 3, () => new OfficeListView(_serviceProvider) },
+            { 4, () => new SequenceListView(_serviceProvider) },
+            { 5, () => new ReportsView(_serviceProvider) },
+            { 6, () => new DataGeneratorView(_serviceProvider) }
         };
 
         var menuFrame = new FrameView("Menu")
@@ -36,10 +38,13 @@ public class MainView : Window
         _menuList = new ListView(new List<string>
         {
             "Students",
+            "Master Students",
             "Professors",
+            "Offices",
             "Sequence Counters",
-            "Reports & Analysis", // 3
-            "Exit" // 4
+            "Reports & Analysis",
+            "Data  Generator",
+            "Exit"
         })
         {
             X = 0, Y = 0, Width = Dim.Fill(), Height = Dim.Fill()
@@ -48,7 +53,6 @@ public class MainView : Window
         _menuList.OpenSelectedItem += a => Navigate(a.Item);
         menuFrame.Add(_menuList);
 
-        // 2. Right Content Area
         _contentFrame = new FrameView("Details")
         {
             X = 25, Y = 0, Width = Dim.Fill(), Height = Dim.Fill()
@@ -60,7 +64,7 @@ public class MainView : Window
 
     private void Navigate(int index)
     {
-        if (index == 4) // Exit index adjusted
+        if (index == 7)
         {
             Terminal.Gui.Application.RequestStop();
             return;

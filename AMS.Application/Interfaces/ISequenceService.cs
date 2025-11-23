@@ -7,5 +7,6 @@ public interface ISequenceService
 {
     Task<Result> CreateSequenceAsync(CreateSequenceDto dto, CancellationToken cancellationToken);
     Task<Result<List<SequenceDto>>> GetAllSequencesAsync(CancellationToken cancellationToken);
+    Task<Result> UpdateSequenceAsync(UpdateSequenceDto dto, CancellationToken cancellationToken);
     Task<Result> DeleteSequenceAsync(string prefix, CancellationToken cancellationToken);
 }

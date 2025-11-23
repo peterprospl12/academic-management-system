@@ -17,7 +17,7 @@ public record MasterStudentDto(
     string LastName,
     string Index,
     string ThesisTopic,
-    string PromoterName
+    ProfessorDto? Promoter
 );
 
 public record UpdateMasterStudentDto(

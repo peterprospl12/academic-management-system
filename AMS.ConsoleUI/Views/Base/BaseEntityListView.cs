@@ -6,7 +6,7 @@ namespace AMS.ConsoleUI.Views.Base;
 
 public abstract class BaseEntityListView<TModel, TService> : BaseView
 {
-    private List<TModel> _items;
+    protected List<TModel> Items;
     protected ListView ListView;
 
     protected BaseEntityListView(IServiceProvider serviceProvider) : base(serviceProvider)
@@ -45,19 +45,19 @@ public abstract class BaseEntityListView<TModel, TService> : BaseView
 
     private void OnItemClicked(ListViewItemEventArgs e)
     {
-        if (_items == null) return;
+        if (Items == null) return;
 
-        if (AllowCreate && e.Item == _items.Count)
+        if (AllowCreate && e.Item == Items.Count)
             OpenAddDialog();
-        else if (AllowDelete && e.Item >= 0 && e.Item < _items.Count) DeleteSelectedItem();
+        else if (AllowDelete && e.Item >= 0 && e.Item < Items.Count) DeleteSelectedItem();
     }
 
     private void DeleteSelectedItem()
     {
         if (!AllowDelete) return;
 
-        if (ListView.SelectedItem < 0 || ListView.SelectedItem >= _items.Count) return;
-        var item = _items[ListView.SelectedItem];
+        if (ListView.SelectedItem < 0 || ListView.SelectedItem >= Items.Count) return;
+        var item = Items[ListView.SelectedItem];
         ConfirmAndDelete(item);
     }
 
@@ -71,9 +71,9 @@ public abstract class BaseEntityListView<TModel, TService> : BaseView
             return;
         }
 
-        _items = result.Value;
+        Items = result.Value;
 
-        var displayList = _items.Select(FormatEntity).ToList();
+        var displayList = Items.Select(FormatEntity).ToList();
 
         if (AllowCreate) displayList.Add($"[ < Add New {EntityName} > ]");
 
@@ -82,7 +82,7 @@ public abstract class BaseEntityListView<TModel, TService> : BaseView
 
     private void OpenAddDialog()
     {
-        var dialog = new Dialog($"Add New {EntityName}", 60, 20);
+        var dialog = new Dialog($"Add New {EntityName}", 60, 25);
         var createView = CreateAddView(() =>
         {
             Terminal.Gui.Application.RequestStop();

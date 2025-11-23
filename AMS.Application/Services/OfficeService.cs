@@ -59,9 +59,9 @@ public class OfficeService(IApplicationDbContext context) : IOfficeService
             .Include(o => o.Professor)
             .Select(o => new OfficeDto(
                 o.Id,
-                o.Building,
                 o.RoomNumber,
-                o.Professor != null ? $"{o.Professor.AcademicTitle} {o.Professor.LastName}" : "Empty"
+                o.Building,
+                o.ProfessorId
             ))
             .ToListAsync(ct)
             .ConfigureAwait(false);
@@ -71,24 +71,41 @@ public class OfficeService(IApplicationDbContext context) : IOfficeService
 
     public async Task<Result> AssignProfessorToOfficeAsync(Guid officeId, Guid professorId, CancellationToken ct)
     {
-        var office = await context.Offices
+        var targetOffice = await context.Offices
             .Include(o => o.Professor)
             .FirstOrDefaultAsync(o => o.Id == officeId, ct)
             .ConfigureAwait(false);
 
-        if (office == null) return Result.Failure("Office not found.");
+        if (targetOffice == null)
+            return Result.Failure("Target office not found.");
 
-        if (office.Professor != null && office.Professor.Id != professorId)
-            return Result.Failure($"Office is already occupied by {office.Professor.LastName}.");
+        if (targetOffice.ProfessorId.HasValue && targetOffice.ProfessorId != professorId)
+            return Result.Failure($"Office is already occupied by {targetOffice.Professor?.LastName}.");
 
-        var existingOffice = await context.Offices
+        var professor = await context.Professors
+            .Include(p => p.Office)
+            .FirstOrDefaultAsync(p => p.Id == professorId, ct)
+            .ConfigureAwait(false);
+
+        if (professor == null)
+            return Result.Failure("Professor not found.");
+
+        if (professor.Office != null && professor.Office.Id != officeId)
+        {
+            professor.Office.ProfessorId = null;
+            professor.Office = null;
+        }
+
+        var oldOffice = await context.Offices
             .FirstOrDefaultAsync(o => o.ProfessorId == professorId && o.Id != officeId, ct)
             .ConfigureAwait(false);
 
-        if (existingOffice != null)
-            existingOffice.ProfessorId = null;
+        if (oldOffice != null) oldOffice.ProfessorId = null;
 
-        office.ProfessorId = professorId;
+        targetOffice.ProfessorId = professorId;
+
+        targetOffice.Professor = professor;
+        professor.Office = targetOffice;
 
         await context.SaveChangesAsync(ct).ConfigureAwait(false);
         return Result.Success();

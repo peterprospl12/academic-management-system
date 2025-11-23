@@ -46,6 +46,24 @@ public class SequenceService(IApplicationDbContext context) : ISequenceService
         return Result<List<SequenceDto>>.Success(sequences);
     }
 
+    public async Task<Result> UpdateSequenceAsync(UpdateSequenceDto dto, CancellationToken cancellationToken)
+    {
+        var normalizedPrefix = dto.Prefix.Trim().ToUpper();
+
+        var sequence = await context.SequenceCounters
+            .FirstOrDefaultAsync(s => s.Prefix == normalizedPrefix, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (sequence == null)
+            return Result.Failure($"Sequence with prefix '{normalizedPrefix}' not found.");
+
+        sequence.CurrentValue = dto.NewValue;
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return Result.Success();
+    }
+
     public async Task<Result> DeleteSequenceAsync(string prefix, CancellationToken cancellationToken)
     {
         var sequence = await context.SequenceCounters
