@@ -183,22 +183,26 @@ academic-management-system/
 
 ## 📸 Screenshots
 
-> Add your application screenshots here to showcase the user interface and features
-
 ### Main Menu
-<!-- ![Main Menu](screenshots/main-menu.png) -->
+<img width="1078" height="562" alt="image" src="https://github.com/user-attachments/assets/eb98135b-30e1-42c0-bb9e-8d275467524e" />
 
-### Student Management
-<!-- ![Student List](screenshots/student-list.png) -->
+### Courses Management
+<img width="1593" height="569" alt="image" src="https://github.com/user-attachments/assets/fc128e2a-a85e-46e8-a057-8985984d3a2c" />
 
-### Course Enrollment
-<!-- ![Enrollment](screenshots/enrollment.png) -->
+<img width="1588" height="566" alt="image" src="https://github.com/user-attachments/assets/4cc16e2d-d4ec-4871-9c4c-66d3df000fc6" />
+
+
+### Assigning office (key: O in Professors List)
+<img width="1588" height="568" alt="image" src="https://github.com/user-attachments/assets/accd61b9-ec1f-4b28-94bd-72dc6e8074a7" />
+
 
 ### Academic Reports
-<!-- ![Reports](screenshots/reports.png) -->
+<img width="773" height="567" alt="image" src="https://github.com/user-attachments/assets/0c1eaebe-a2f9-4310-9790-a19ca62fc452" />
+
 
 ### Data Generator
-<!-- ![Data Generator](screenshots/data-generator.png) -->
+<img width="618" height="568" alt="image" src="https://github.com/user-attachments/assets/5a3e00e2-dd1f-47b7-9a31-309711c9a481" />
+
 
 ## 🧹 Clean Code Practices
 
@@ -270,11 +274,3 @@ Interactive console application with:
 - Create/Update/Delete operations
 - Report generation and display
 - Data seeding control
-
-## 📄 License
-
-This project is a educational assignment showcasing Clean Architecture and Entity Framework Core capabilities.
-
----
-
-**Note**: This system was developed as a comprehensive homework assignment demonstrating advanced Entity Framework Core concepts, Clean Architecture principles, and modern C# development practices.
